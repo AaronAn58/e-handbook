@@ -5,12 +5,13 @@
 #include <HTTPClient.h>
 #include <WiFi.h>
 #include <SD_MMC.h>
+#include <DEV_Config.h>
 
 #define TEST_FILE_SIZE (4 * 1024 * 1024)
-#define SCK 18
-#define MISO 15
-#define MOSI 13
-#define CS 14
+#define SD_SCK 18
+#define SD_MISO 15
+#define SD_MOSI 13
+#define SD_CS 14
 
 const char *ssid = "TP-LINK_7E2B12";
 const char *password = "20DCE67E2B12";
@@ -208,10 +209,9 @@ void testIO(fs::FS &fs)
 
 void setup()
 {
-
-  Serial.begin(115200);
-  spi.begin(SCK, MISO, MOSI, CS);
-  if (!SD.begin(CS, spi))
+  spi.begin(SD_SCK, SD_MISO, SD_MOSI, SD_CS);
+  DEV_Module_Init();
+  if (!SD.begin(SD_CS, spi))
   {
     Serial.println("Card Mount Failed");
     return;
