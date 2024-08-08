@@ -1,4 +1,5 @@
 #include "menu.h"
+#include "SDModel.h"
 
 
 void display();
@@ -25,6 +26,10 @@ void book_list_not_empty_enter();
 
 MenuAction *home;
 MenuAction *curr_m;
+int menu_pos = 0;
+
+// 每页读取字节数，不是实际显示的数量
+int page_read_size = 150 * 3;
 
 ScrollMenuArr scroll_menu = {
     .max_line_num = max_menus_line,
@@ -207,9 +212,109 @@ void doAction(int action) {
             }
             break;
         case RIGHT_ACTION:
-            
+            Serial.println("RIGHT_ACTION");
+            if (curr_m->enter_call) {
+                curr_m->enter_call();
+            }
             break;
     }
+}
+
+void enter_read() {
+    FileInfo *select_file = (FileInfo*) scroll.curr_ptr;
+    long pos = 0;
+    pos = book_recorder_pos_and_write_eep(select_file->name);
+
+    next_page_read(pos, select_file->name);
+}
+/**
+ * 下一页回调
+ */
+void next_page() {
+    FileInfo *select_file = (FileInfo*) scroll.curr_ptr;
+    long pos = read_eep_next();
+    next_page_read(pos, select_file->name);
+}
+
+/**
+ * 上一页回调
+ */
+void last_page() {
+    FileInfo *select_file = (FileInfo*) scroll.curr_ptr;
+    long pos = read_eep_last();
+    last_page_read(pos, select_file->name);
+}
+
+/**
+ * 下一页
+ */
+void next_page_read(long pos, const char* file_name) {
+    Serial.printf("pos: %d\n", pos);
+    char *file_path = malloc_and_concat("/", file_path, NULL);
+    char *read_content = read_book_content_from_last_pos(file_path, page_read_size, pos);
+    long new_pos = text_multi_line_show(read_content, false);
+    long old_pos = read_eep_next();
+    write_eep_curr(old_pos);
+    old_pos += new_pos;
+    write_eep_next(old_pos);
+    free(file_path);
+    free(read_content);
+}
+
+/**
+ * 上一页
+ */
+void last_page_read(long pos, const char* file_name) {
+    pos = pos < get_page_chars() ? 0 : pos;
+    if (!pos) {
+        next_page_read(pos, file_name);
+    } else {
+        last_page_read_content_and_pos(pos, file_name);
+    }
+
+}
+
+/**
+ * 从指定位置往前读取一页内容
+ */
+void last_page_read_content_and_pos(long pos, const char* file_name) {
+    char *file_path = malloc_and_concat("/", file_path, NULL);
+    CharWithPos read_content = reverse_read_book_content_from_last_pos(file_path, get_page_chars(), pos, get_page_chars());
+    long new_pos = text_multi_line_show(read_content.str + read_content.start_pos, true);
+    long old_pos = read_eep_last();
+    write_eep_next(old_pos);
+    old_pos -= new_pos;
+    write_eep_curr(old_pos);
+    free(file_path);
+    free(read_content.str);
+}
+
+/**
+ * 退出阅读，记录阅读进度
+ */
+void exit_read() {
+    FileInfo *select_file = (FileInfo*) scroll.curr_ptr;
+    record_book_read_pos_single(select_file->name);
+    twice_back_menu();
+}
+
+void twice_back_menu() {
+    if (!curr_m->last_lev_menus) {
+        return;
+    }
+    curr_m = (curr_m->last_lev_menus)[0];
+    back_menu();
+}
+
+void back_menu() {
+    if (!curr_m->last_lev_menus) {
+        return;
+    }
+    curr_m = (curr_m->last_lev_menus)[0];
+    menu_pos = 0;
+    
+    init_menu_scroll();
+    curr_m -> display();
 }
 
 char* menu_content_collect(const char *show_arr[], int len) {
