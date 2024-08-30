@@ -7,6 +7,8 @@
 #include <SD_MMC.h>
 #include <DEV_Config.h>
 #include <EPD_2in9_V2.h>
+#include "screen.h"
+#include "menu.h"
 
 #define TEST_FILE_SIZE (4 * 1024 * 1024)
 #define SD_SCK 18
@@ -251,10 +253,13 @@ void testIO(fs::FS &fs)
 //   int currentSec = timeinfo.tm_sec;
 
 void setup() {
-  DEV_Module_Init();
-  EPD_2IN9_V2_Init();
-  EPD_2IN9_V2_Clear();
-  DEV_Delay_ms(500);
+  Serial.begin(115200);
+  init_screen();
+
+  init_menu();
+
+
+  
 }
 
 //   Serial.print("Current Time: " + (String)currentHour + ":" + (String)currentMin + ":" + (String)currentSec);
@@ -274,27 +279,26 @@ void setup()
 	printf("EPD_2IN9_V2_test Demo\r\n");
 	DEV_Module_Init();
 
-    printf("e-Paper Init and Clear...\r\n");
-    EPD_2IN9_V2_Init();
-    EPD_2IN9_V2_Clear();
-    DEV_Delay_ms(500);
+  printf("e-Paper Init and Clear...\r\n");
+  EPD_2IN9_V2_Init();
+  EPD_2IN9_V2_Clear();
+  DEV_Delay_ms(500);
 
-    //Create a new image cache
-    UBYTE *BlackImage;
-    /* you have to edit the startup_stm32fxxx.s file and set a big enough heap size */
-    UWORD Imagesize = ((EPD_2IN9_V2_WIDTH % 8 == 0)? (EPD_2IN9_V2_WIDTH / 8 ): (EPD_2IN9_V2_WIDTH / 8 + 1)) * EPD_2IN9_V2_HEIGHT;
-    if((BlackImage = (UBYTE *)malloc(Imagesize)) == NULL) {
-        printf("Failed to apply for black memory...\r\n");
-        while(1);
-    }
-    printf("Paint_NewImage\r\n");
-    Paint_NewImage(BlackImage, EPD_2IN9_V2_WIDTH, EPD_2IN9_V2_HEIGHT, 270, WHITE);
+  //Create a new image cache
+  UBYTE *BlackImage;
+  /* you have to edit the startup_stm32fxxx.s file and set a big enough heap size */
+  UWORD Imagesize = ((EPD_2IN9_V2_WIDTH % 8 == 0)? (EPD_2IN9_V2_WIDTH / 8 ): (EPD_2IN9_V2_WIDTH / 8 + 1)) * EPD_2IN9_V2_HEIGHT;
+  if((BlackImage = (UBYTE *)malloc(Imagesize)) == NULL) {
+      printf("Failed to apply for black memory...\r\n");
+      while(1);
+  }
+  printf("Paint_NewImage\r\n");
 
 #if 1   //show image for array  
     Paint_NewImage(BlackImage, EPD_2IN9_V2_WIDTH, EPD_2IN9_V2_HEIGHT, 270, WHITE);  
     printf("show image for array\r\n");
-    Paint_SelectImage(BlackImage);
     Paint_Clear(WHITE);
+    Paint_SelectImage(BlackImage);
     Paint_DrawBitMap(gImage_2in9);
 
     EPD_2IN9_V2_Display(BlackImage);

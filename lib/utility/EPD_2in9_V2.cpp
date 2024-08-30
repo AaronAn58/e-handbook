@@ -253,7 +253,7 @@ void EPD_2IN9_V2_Init(void)
 	
 	EPD_2IN9_V2_SendCommand(0x11); //data entry mode       
 	EPD_2IN9_V2_SendData(0x03);
-	
+
 	EPD_2IN9_V2_SetWindows(0, 0, EPD_2IN9_V2_WIDTH-1, EPD_2IN9_V2_HEIGHT-1);
 	
 	EPD_2IN9_V2_SendCommand(0x21); //  Display update control
